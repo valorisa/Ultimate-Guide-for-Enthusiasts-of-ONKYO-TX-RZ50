@@ -117,4 +117,12 @@ cd docs && make html
 > 📖 **Note** : La documentation technique détaillée (Installation, Raccordements, Calibration, Modes d'écoute, Multizone, Dépannage) sera peuplée automatiquement via l'assistant IA calibré sur le manuel officiel. Consultez `/docs/source/` après clonage.
 
 
+## 📚 Documentation technique
+
+| Guide | Description | Pages du manuel |
+|-------|-------------|----------------|
+| [🔧 Installation & Branchement](docs/guides/installation.md) | Sécurité, câblage enceintes, HDMI, consommation | p.7-77 |
+| [⚙️ Configuration & Calibration](docs/guides/configuration.md) | AccuEQ, Dirac Live, réglages audio avancés | p.124-167 |
+| [🎧 Modes d'écoute](docs/guides/modes_ecoute.md) | Dolby Atmos, DTS:X, THX, effets par usage | p.89, 183-198 |
+| [🛠️ Dépannage & Codes erreur](docs/guides/depannage.md) | FAQ, messages d'erreur, solutions | p.169-181 |
 
