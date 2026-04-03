@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  onkyo-control:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: onkyo-tx-rz50-control
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    environment:
+      - TX_RZ50_IP=192.168.1.100
+      - RS232_PORT=/dev/ttyUSB0
+    restart: unless-stopped
+
+  onkyo-docs:
+    image: sphinxdoc/sphinx
+    container_name: onkyo-tx-rz50-docs
+    volumes:
+      - ./docs:/docs
+    ports:
+      - "8000:8000"
+    command: sphinx-autobuild /docs/source /docs/build/html --host 0.0.0.0

@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.venv
+venv
+*.log
+.git
+.github
+docs/build
+*.md
+!README.md
