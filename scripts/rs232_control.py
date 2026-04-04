@@ -247,7 +247,7 @@ class RS232Controller:
                     value = f"{vol:02X}"
                 except ValueError:
                     raise ValueError(f"Volume invalide: {value}")
-            return (cmd_template.format(value) + ISCP_END.decode()).encode('ascii')
+            return (cmd_template.format(int(value, 16) if category in ('ZONE2', 'VOLUME') else value) + ISCP_END.decode()).encode('ascii')
         
         return (cmd_template + ISCP_END.decode()).encode('ascii')
     

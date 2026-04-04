@@ -140,18 +140,19 @@ class OnkyoHTTPClient:
         """
         url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        
+        response = None
+
         try:
             if method.upper() == "GET":
                 response = self.session.get(url, headers=headers, timeout=self.timeout)
             else:
                 response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout)
-                
+
             response.raise_for_status()
             data = response.json()
             logger.debug(f"Réponse {endpoint}: {json.dumps(data, indent=2)}")
             return data
-            
+
         except Timeout as e:
             logger.error(f"Timeout sur {url}: {e}")
             raise TimeoutError(f"Le récepteur ne répond pas dans les {self.timeout}s") from e
@@ -159,7 +160,8 @@ class OnkyoHTTPClient:
             logger.error(f"Erreur HTTP sur {url}: {e.response.status_code} - {e.response.text}")
             raise HTTPError(f"Erreur API: {e.response.status_code}") from e
         except json.JSONDecodeError as e:
-            logger.error(f"Réponse non JSON de {url}: {response.text}")
+            resp_text = response.text if response is not None else "N/A"
+            logger.error(f"Réponse non JSON de {url}: {resp_text}")
             raise ValueError("Réponse invalide : JSON attendu") from e
         except RequestException as e:
             logger.error(f"Erreur réseau sur {url}: {e}")

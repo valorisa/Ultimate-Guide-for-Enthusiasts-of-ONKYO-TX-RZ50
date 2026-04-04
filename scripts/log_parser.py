@@ -106,18 +106,21 @@ def parse_line(line: str) -> Dict[str, Any]:
             
     # Détection Erreurs & Status
     line_upper = line.upper()
+    error_found = False
     for code, desc in load_error_map().items():
         if code.upper() in line_upper:
             result["type"] = "error"
             result["severity"] = "critical" if "NG:" in code or "AMP Diag" in code else "warning"
             result["error_desc"] = desc
+            error_found = True
             break
-    elif "ERROR" in line_upper or "FAIL" in line_upper:
-        result["type"] = "error"
-        result["severity"] = "warning"
-    elif "SUCCESS" in line_upper or "COMPLETED" in line_upper:
-        result["type"] = "status"
-        result["severity"] = "info"
+    if not error_found:
+        if "ERROR" in line_upper or "FAIL" in line_upper:
+            result["type"] = "error"
+            result["severity"] = "warning"
+        elif "SUCCESS" in line_upper or "COMPLETED" in line_upper:
+            result["type"] = "status"
+            result["severity"] = "info"
         
     return result
 
