@@ -34,9 +34,8 @@ import json
 import logging
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 # Configuration du logging
 logging.basicConfig(

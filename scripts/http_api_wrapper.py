@@ -284,13 +284,13 @@ Exemples:
             elif args.command == "firmware":
                 print(json.dumps(client.get_firmware_version(), indent=2, ensure_ascii=False))
             elif args.command == "power":
-                res = client.set_power(args.on)
+                client.set_power(args.on)
                 print(f"✅ Alimentation: {'ON' if args.on else 'STANDBY'}")
             elif args.command == "volume":
-                res = client.set_volume(args.set)
+                client.set_volume(args.set)
                 print(f"✅ Volume réglé à: {args.set}")
             elif args.command == "source":
-                res = client.set_source(args.name)
+                client.set_source(args.name)
                 print(f"✅ Source sélectionnée: {args.name}")
             else:
                 parser.print_help()

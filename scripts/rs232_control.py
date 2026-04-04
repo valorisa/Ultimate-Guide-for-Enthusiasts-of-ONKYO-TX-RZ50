@@ -46,7 +46,7 @@ import logging
 import serial
 import time
 import sys
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 from pathlib import Path
 
 # Configuration du logging
