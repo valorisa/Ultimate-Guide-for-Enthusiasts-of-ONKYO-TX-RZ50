@@ -88,3 +88,6 @@ intersphinx_mapping = {
 
 # -- Language ----------------------------------------------------------------
 language = 'fr'
+
+# Ignorer les warnings pour les images manquantes (temporaire)
+suppress_warnings = ['image.not_readable', 'toc.not_readable']
