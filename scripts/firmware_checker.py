@@ -32,11 +32,11 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 import requests
+from packaging.version import InvalidVersion, Version
 from requests.auth import HTTPBasicAuth
-from packaging.version import Version, InvalidVersion
 
 logging.basicConfig(
     level=logging.INFO,
@@ -55,29 +55,29 @@ VERSION_PATTERN = re.compile(r"(\d+\.\d+\.\d+)")
 class FirmwareChecker:
     """
     Vérificateur et comparateur de micrologiciel TX-RZ50.
-    
+
     Cette classe gère la récupération de la version actuelle via l'API Web,
     le stockage local, la comparaison sémantique et la génération de rapports.
-    
+
     Attributes:
         host (str): Adresse IP du TX-RZ50.
         auth (HTTPBasicAuth): Identifiants d'accès Web Setup [p.157].
         session (requests.Session): Session HTTP réutilisable.
-        
+
     Raises:
         ValueError: Si l'hôte est invalide.
         ConnectionError: En cas d'échec de connexion au récepteur.
-        
+
     Example:
         >>> checker = FirmwareChecker("192.168.1.100")
         >>> status = checker.check_update()
         >>> print(status["message"])
     """
-    
+
     def __init__(self, host: str, username: str = "admin", password: str = "admin"):
         """
         Initialise le vérificateur de firmware.
-        
+
         Args:
             host: Adresse IP ou hostname du TX-RZ50.
             username: Identifiant Web Setup (défaut: admin).
@@ -85,14 +85,14 @@ class FirmwareChecker:
         """
         if not host or "://" in host:
             raise ValueError("L'hôte doit être fourni sans schéma (ex: 192.168.1.100)")
-            
+
         self.base_url = f"http://{host}"
         self.auth = HTTPBasicAuth(username, password)
         self.session = requests.Session()
         self.session.auth = self.auth
         logger.info(f"FirmwareChecker initialisé pour {self.base_url}")
 
-    def _fetch_page(self, endpoint: str) -> Optional[str]:
+    def _fetch_page(self, endpoint: str) -> str | None:
         """Récupère le contenu brut d'une page Web Setup."""
         try:
             url = f"{self.base_url}{endpoint}"
@@ -103,13 +103,13 @@ class FirmwareChecker:
             logger.error(f"Échec de récupération {endpoint}: {e}")
             return None
 
-    def get_current_version(self) -> Optional[str]:
+    def get_current_version(self) -> str | None:
         """
         Extrait la version actuelle du firmware depuis le récepteur.
-        
+
         Returns:
             str: Numéro de version (ex: "1.1.0") ou None si indisponible.
-            
+
         Note:
             L'API Web Setup d'Onkyo n'est pas officiellement documentée.
             Cette méthode tente de parser la réponse JSON de /Status/getStatus
@@ -131,11 +131,11 @@ class FirmwareChecker:
             ver_match = VERSION_PATTERN.search(html)
             if ver_match:
                 return ver_match.group(1)
-                
+
         logger.warning("Impossible d'extraire la version actuelle. Vérifiez la connexion réseau.")
         return None
 
-    def _fetch_json(self, endpoint: str) -> Optional[Dict[str, Any]]:
+    def _fetch_json(self, endpoint: str) -> dict[str, Any] | None:
         """Helper pour parser une réponse JSON."""
         text = self._fetch_page(endpoint)
         if text:
@@ -145,14 +145,14 @@ class FirmwareChecker:
                 return None
         return None
 
-    def get_latest_reference(self, source_url: Optional[str] = None) -> Optional[str]:
+    def get_latest_reference(self, source_url: str | None = None) -> str | None:
         """
         Récupère la version de référence la plus récente.
-        
+
         Args:
             source_url: URL vers un fichier JSON contenant {"latest_version": "x.y.z"}.
                        Si None, lit DEFAULT_VERSION_FILE.
-                       
+
         Returns:
             str: Version de référence ou None.
         """
@@ -174,22 +174,22 @@ class FirmwareChecker:
                 logger.error(f"Échec lecture fichier local: {e}")
         return None
 
-    def check_update(self, latest_url: Optional[str] = None) -> Dict[str, Any]:
+    def check_update(self, latest_url: str | None = None) -> dict[str, Any]:
         """
         Compare la version actuelle avec la version de référence.
-        
+
         Args:
             latest_url: URL optionnelle vers le fichier de référence.
-            
+
         Returns:
-            Dict[str, Any]: Rapport structuré {current, latest, update_available, message, timestamp}
+            dict[str, Any]: Rapport structuré {current, latest, update_available, message, timestamp}
         """
         current = self.get_current_version()
         if not current:
             return {"current": None, "latest": None, "update_available": False, "message": "❌ Impossible de lire la version actuelle.", "timestamp": datetime.now().isoformat()}
 
         latest = self.get_latest_reference(latest_url) or current
-        
+
         try:
             is_update = Version(latest) > Version(current)
             msg = f"✅ Firmware à jour ({current})." if not is_update else f"🔔 Mise à jour disponible : {current} -> {latest} [p.8-10]"
@@ -236,15 +236,15 @@ Exemples:
     parser.add_argument("--output", "-o", default=None, help="Fichier de sortie JSON")
     parser.add_argument("--set-latest", default=None, help="Force et enregistre manuellement la version de référence")
     parser.add_argument("--verbose", "-v", action="store_true", help="Mode verbeux")
-    
+
     args = parser.parse_args()
-    
+
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
-        
+
     try:
         checker = FirmwareChecker(args.host, args.user, args.password)
-        
+
         if args.set_latest:
             checker.save_version(args.set_latest)
             print(f"💾 Version de référence définie sur : {args.set_latest}")
@@ -252,11 +252,11 @@ Exemples:
 
         result = checker.check_update(args.latest_url)
         print(result["message"])
-        
+
         if args.output:
             Path(args.output).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
             print(f"📄 Rapport sauvegardé : {args.output}")
-            
+
     except (ValueError, ConnectionError) as e:
         logger.error(f"Erreur d'exécution: {e}")
         print(f"❌ {e}", file=sys.stderr)
