@@ -116,6 +116,7 @@ python scripts/rs232_control.py --help
 
 # 4. Générer la documentation locale (Sphinx)
 cd docs && make html
+Start-Process "_build/html/index.html"
 ```
 
 > 📖 **Note** : La documentation technique détaillée (Installation, Raccordements, Calibration, Modes d'écoute, Multizone, Dépannage) sera peuplée automatiquement via l'assistant IA calibré sur le manuel officiel. Consultez `/docs/source/` après clonage.
