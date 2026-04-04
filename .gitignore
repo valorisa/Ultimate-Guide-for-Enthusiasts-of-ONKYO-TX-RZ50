@@ -5,3 +5,7 @@ venv/
 *.log
 docs/build/
 .docker/
+.env
+docs/_build/
+docs/source/source/
+docs/extract_appendix.py
