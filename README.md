@@ -128,8 +128,11 @@ Start-Process "_build/html/index.html"
 |-------|-------------|----------------|
 | [🔧 Installation & Branchement](docs/guides/installation.md) | Sécurité, câblage enceintes, HDMI, consommation | p.7-77 |
 | [⚙️ Configuration & Calibration](docs/guides/configuration.md) | AccuEQ, Dirac Live, réglages audio avancés | p.124-167 |
+| [🎧 AccuEQ Deep Dive](docs/guides/accueq_deep_dive.md) | AccuEQ vs Dirac Live, optimisation avancée | p.124-143 |
 | [🎧 Modes d'écoute](docs/guides/modes_ecoute.md) | Dolby Atmos, DTS:X, THX, effets par usage | p.89, 183-198 |
 | [🌐 Multizone - ZONE 2 & ZONE 3](docs/guides/multizone.md) | Configuration, limitations, scénarios d'usage | p.108-111 |
+| [🎯 REW + Dirac Live](docs/guides/rew_dirac.md) | Calibration avancée avec Room EQ Wizard | p.160-166 |
+| [🔒 Sécurité Réseau](docs/guides/security.md) | VLAN, reverse proxy, audit de sécurité | p.145-157 |
 | [🛠️ Dépannage & Codes erreur](docs/guides/depannage.md) | FAQ, messages d'erreur, solutions | p.169-181 |
 
 ---
@@ -138,19 +141,23 @@ Start-Process "_build/html/index.html"
 
 | Composant | Statut | Dernière mise à jour |
 |-----------|--------|---------------------|
-| 📚 Documentation | 🟢 Complète (5/5 guides) | 2026-04 |
-| 🐍 Scripts Python | 🟢 Fonctionnels + tests (75 tests) | 2026-04 |
+| 📚 Documentation | 🟢 Complète (8 guides) | 2026-04 |
+| 🐍 Scripts Python | 🟢 6 scripts + 91 tests | 2026-04 |
 | 🐳 Docker | 🟢 Ready | 2026-04 |
 | 🤖 CI/CD | 🟢 Lint + Tests + Docs + Deploy | 2026-04 |
-| 🏠 Home Assistant | 🟢 Config REST + MQTT | 2026-04 |
+| 🏠 Home Assistant | 🟢 Config REST + MQTT + Custom Component | 2026-04 |
+| 🔄 Node-RED | 🟢 4 flows prêts à importer | 2026-04 |
+| ⚡ Monitoring | 🟢 Script energy_monitor.py | 2026-04 |
+| 🔒 Sécurité | 🟢 Guide réseau complet | 2026-04 |
 
 ---
 
 ## 🗓️ Roadmap
 
-- [ ] Script bridge MQTT dédié (`scripts/mqtt_bridge.py`)
 - [ ] Traduction EN/FR de la documentation
-- [ ] Makefile pour commandes courantes (`make test`, `make lint`, `make docs`)
+- [ ] Base de données codes IR (Broadlink/Logitech Harmony)
+- [ ] Plugin Home Assistant officiel (HACS)
+- [ ] Interface Web avancée (graphiques consommation, historique)
 ---
 
 ## 🔧 Installation détaillée
