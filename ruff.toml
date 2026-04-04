@@ -1,0 +1,26 @@
+# Ruff configuration for ONKYO TX-RZ50 project
+# https://docs.astral.sh/ruff/configuration/
+
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # Pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # Ruff-specific rules
+]
+ignore = [
+    "E501",  # Line length handled by formatter
+]
+
+[lint.isort]
+known-first-party = ["rs232_control", "http_api_wrapper", "log_parser", "firmware_checker"]
+
+[format]
+quote-style = "double"

@@ -61,30 +61,34 @@ Le **ONKYO TX-RZ50** est un récepteur AV haut de gamme 9.2 canaux, compatible D
 ```text
 Ultimate-Guide-for-Enthusiasts-of-ONKYO-TX-RZ50/
 ├── 📁 docs/
-│   ├── 📁 source/                 # Fichiers Sphinx (.rst/.md)
-│   ├── 📄 conf.py                 # Configuration Sphinx
-│   └── 📄 index.rst               # Page d'accueil de la doc
+│   ├── 📁 guides/                 # Documentation Markdown (.md)
+│   ├── 📁 source/                 # Fichiers Sphinx (.rst)
+│   └── 📄 conf.py                 # Configuration Sphinx
 ├── 📁 scripts/
+│   ├── 📁 tests/                  # Tests unitaires (pytest)
 │   ├── 📄 rs232_control.py        # Contrôle série RS-232 (allumage, source, volume)
 │   ├── 📄 http_api_wrapper.py     # Wrapper API HTTP/Web Setup du TX-RZ50
 │   ├── 📄 log_parser.py           # Analyseur de logs série/HTTP, export CSV/JSON
 │   ├── 📄 firmware_checker.py     # Vérification version firmware via réseau
-│   └── 📄 requirements.txt        # Dépendances Python
+│   ├── 📄 health_check.py         # Script de santé pour Docker HEALTHCHECK
+│   ├── 📄 requirements.txt        # Dépendances Python
+│   └── 📄 README.md               # Documentation technique des scripts
 ├── 📁 docker/
 │   ├── 📄 Dockerfile              # Image Python 3.11-slim, non-root, HEALTHCHECK
 │   └── 📄 docker-compose.yml      # Services onkyo-control + onkyo-docs
 ├── 📁 config/
-│   └── 📄 home_assistant.yaml     # Exemple d'intégration HA (MQTT/HTTP)
+│   └── 📄 home_assistant.yaml     # Exemple d'intégration HA (MQTT/REST)
 ├── 📁 .github/
-│   └── 📁 ISSUE_TEMPLATE/
-│       ├── 📄 bug_report.md
-│       ├── 📄 doc_suggestion.md
-│       └── 📄 feature_request.md
+│   ├── 📁 ISSUE_TEMPLATE/
+│   │   ├── 📄 bug_report.md
+│   │   ├── 📄 doc_suggestion.md
+│   │   └── 📄 feature_request.md
+│   └── 📁 workflows/
+│       └── 📄 sphinx.yml          # CI: lint → test → docs → deploy
 ├── 📄 README.md
 ├── 📄 LICENSE
-├── 📄 ATTRIBUTION.md
-├── 📄 CONTRIBUTING.md
-└── 📄 requirements-docs.txt
+├── 📄 Makefile                    # Commandes courantes (test, lint, docs, docker)
+└── 📄 ruff.toml                   # Configuration du linter Ruff
 ```
 
 ---
@@ -124,6 +128,7 @@ cd docs && make html
 | [🔧 Installation & Branchement](docs/guides/installation.md) | Sécurité, câblage enceintes, HDMI, consommation | p.7-77 |
 | [⚙️ Configuration & Calibration](docs/guides/configuration.md) | AccuEQ, Dirac Live, réglages audio avancés | p.124-167 |
 | [🎧 Modes d'écoute](docs/guides/modes_ecoute.md) | Dolby Atmos, DTS:X, THX, effets par usage | p.89, 183-198 |
+| [🌐 Multizone - ZONE 2 & ZONE 3](docs/guides/multizone.md) | Configuration, limitations, scénarios d'usage | p.108-111 |
 | [🛠️ Dépannage & Codes erreur](docs/guides/depannage.md) | FAQ, messages d'erreur, solutions | p.169-181 |
 
 ---
@@ -132,19 +137,19 @@ cd docs && make html
 
 | Composant | Statut | Dernière mise à jour |
 |-----------|--------|---------------------|
-| 📚 Documentation | 🟡 En cours (PHASE 1/2) | 2024-04 |
-| 🐍 Scripts Python | 🟢 Fonctionnels (4/4) | 2024-04 |
-| 🐳 Docker | 🟢 Ready | 2024-04 |
-| 🤖 CI/CD | 🟡 GitHub Actions (Sphinx) | 2024-04 |
+| 📚 Documentation | 🟢 Complète (5/5 guides) | 2026-04 |
+| 🐍 Scripts Python | 🟢 Fonctionnels + tests (75 tests) | 2026-04 |
+| 🐳 Docker | 🟢 Ready | 2026-04 |
+| 🤖 CI/CD | 🟢 Lint + Tests + Docs + Deploy | 2026-04 |
+| 🏠 Home Assistant | 🟢 Config REST + MQTT | 2026-04 |
 
 ---
 
 ## 🗓️ Roadmap
 
-- [ ] PHASE 2 : Génération auto des fichiers `.md` via IA (AccuEQ, Dirac, Multizone)
-- [ ] Tests unitaires pour les scripts Python (`pytest`)
-- [ ] Intégration Home Assistant complète (MQTT + REST)
+- [ ] Script bridge MQTT dédié (`scripts/mqtt_bridge.py`)
 - [ ] Traduction EN/FR de la documentation
+- [ ] Makefile pour commandes courantes (`make test`, `make lint`, `make docs`)
 ---
 
 ## 🔧 Installation détaillée
