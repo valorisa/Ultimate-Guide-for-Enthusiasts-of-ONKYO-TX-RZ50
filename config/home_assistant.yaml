@@ -1,0 +1,517 @@
+# 🏠 Intégration Home Assistant - ONKYO TX-RZ50
+
+> 📋 Configuration complète pour l'intégration du TX-RZ50 dans Home Assistant
+> via REST API, MQTT et commandes ISCP.
+
+## 📋 Prérequis
+
+- Home Assistant 2024.x ou supérieur
+- TX-RZ50 connecté au réseau (Wi-Fi ou Ethernet)
+- Contrôle réseau activé : `Setup → Hardware → Network → Network Control = On`
+- Identifiants Web Setup connus (par défaut : `admin`/`admin`)
+
+---
+
+## 🔌 Méthode 1 : REST API (recommandée)
+
+### Configuration de base
+
+```yaml
+# configuration.yaml
+
+# Variables pour l'IP et l'authentification
+input_text:
+  onkyo_ip:
+    name: "ONKYO TX-RZ50 IP"
+    initial: "192.168.1.100"
+  onkyo_auth:
+    name: "ONKYO Auth (base64 admin:admin)"
+    initial: "YWRtaW46YWRtaW4="  # base64("admin:admin")
+
+# Commandes REST pour le contrôle
+rest_command:
+  onkyo_power_on:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=PWON"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_power_off:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=PWSTANDBY"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_volume_set:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=MVL{{ volume }}"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_mute_on:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=AML01"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_mute_off:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=AML00"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_source_net:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=SLI27"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_source_bluray:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=SLI00"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_source_tv:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=SLI07"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_source_bt:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=SLI29"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_mode_stereo:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=LMST"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_mode_direct:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=LMDIR"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+
+  onkyo_mode_atmos:
+    url: "http://{{ states('input_text.onkyo_ip') }}/goform/formMainZone"
+    method: "post"
+    payload: "ctl00=LMDA"
+    headers:
+      Authorization: "Basic {{ states('input_text.onkyo_auth') }}"
+      Content-Type: "application/x-www-form-urlencoded"
+```
+
+### Capteurs d'état (REST)
+
+```yaml
+# configuration.yaml (suite)
+
+# Récupération de l'état via polling
+rest:
+  - resource: "http://{{ states('input_text.onkyo_ip') }}/Status/getStatus"
+    authentication: basic
+    username: admin
+    password: admin
+    scan_interval: 30
+    sensor:
+      - name: "ONKYO Power State"
+        value_template: "{{ value_json.power }}"
+      - name: "ONKYO Volume"
+        value_template: "{{ value_json.volume }}"
+      - name: "ONKYO Source"
+        value_template: "{{ value_json.source }}"
+      - name: "ONKYO Listening Mode"
+        value_template: "{{ value_json.listening_mode }}"
+```
+
+### Template Media Player
+
+```yaml
+# configuration.yaml (suite)
+
+media_player:
+  - platform: template
+    players:
+      onkyo_tx_rz50:
+        friendly_name: "ONKYO TX-RZ50"
+        device_class: receiver
+        state: >
+          {% if is_state('sensor.onkyo_power_state', 'on') %}
+            on
+          {% else %}
+            off
+          {% endif %}
+        volume_level: >
+          {% set vol = states('sensor.onkyo_volume') | float(0) %}
+          {{ (vol / 80) | round(2) }}
+        source: "{{ states('sensor.onkyo_source') }}"
+        source_list:
+          - "BD/DVD"
+          - "GAME"
+          - "CBL/SAT"
+          - "STRM BOX"
+          - "PC"
+          - "AUX"
+          - "CD"
+          - "TV"
+          - "PHONO"
+          - "NET"
+          - "USB"
+          - "BLUETOOTH"
+          - "TUNER"
+        turn_on:
+          service: rest_command.onkyo_power_on
+        turn_off:
+          service: rest_command.onkyo_power_off
+        volume_set:
+          service: rest_command.onkyo_volume_set
+          data:
+            volume: "{{ (volume * 80) | round(0) | int }}"
+        select_source:
+          service: >
+            {% set source_map = {
+              'BD/DVD': 'rest_command.onkyo_source_bluray',
+              'TV': 'rest_command.onkyo_source_tv',
+              'NET': 'rest_command.onkyo_source_net',
+              'BLUETOOTH': 'rest_command.onkyo_source_bt'
+            } %}
+            {{ source_map.get(source, 'rest_command.onkyo_source_net') }}
+```
+
+---
+
+## 📡 Méthode 2 : MQTT (via script Python)
+
+### Architecture
+
+```
+Home Assistant ──MQTT──▶ Script Python (bridge) ──HTTP/RS232──▶ TX-RZ50
+```
+
+### Configuration MQTT dans HA
+
+```yaml
+# configuration.yaml
+
+mqtt:
+  - media_player:
+      name: "ONKYO TX-RZ50 MQTT"
+      unique_id: onkyo_tx_rz50_mqtt
+      command_topic: "onkyo/tx-rz50/command"
+      state_topic: "onkyo/tx-rz50/state"
+      availability_topic: "onkyo/tx-rz50/availability"
+      payload_on: "ON"
+      payload_off: "STANDBY"
+      payload_available: "online"
+      payload_not_available: "offline"
+      volume_command_topic: "onkyo/tx-rz50/volume/set"
+      volume_state_topic: "onkyo/tx-rz50/volume/state"
+      source_command_topic: "onkyo/tx-rz50/source/set"
+      source_state_topic: "onkyo/tx-rz50/source/state"
+      source_list:
+        - "BD/DVD"
+        - "GAME"
+        - "CBL/SAT"
+        - "NET"
+        - "USB"
+        - "BLUETOOTH"
+        - "TUNER"
+        - "TV"
+        - "PHONO"
+```
+
+### Script bridge Python (à exécuter en continu)
+
+```python
+#!/usr/bin/env python3
+"""
+Pont MQTT pour ONKYO TX-RZ50 - Intégration Home Assistant.
+
+Ce script fait le lien entre les commandes MQTT reçues de Home Assistant
+et l'API HTTP du TX-RZ50. Il publie également l'état actuel du récepteur.
+
+Dépendances:
+    pip install paho-mqtt requests
+
+Usage:
+    python mqtt_bridge.py --host 192.168.1.100 --mqtt-broker 192.168.1.50
+"""
+
+import argparse
+import json
+import logging
+import sys
+from pathlib import Path
+
+import paho.mqtt.client as mqtt
+import requests
+from requests.auth import HTTPBasicAuth
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Mappage des sources ISCP → noms lisibles
+SOURCE_MAP = {
+    "00": "BD/DVD", "01": "GAME", "02": "CBL/SAT", "03": "STRM BOX",
+    "04": "PC", "05": "AUX", "06": "CD", "07": "TV", "08": "PHONO",
+    "27": "NET", "28": "USB", "29": "BLUETOOTH", "26": "TUNER"
+}
+
+class OnkyoMQTTBridge:
+    def __init__(self, onkyo_host, mqtt_broker, mqtt_port=1883, username="admin", password="admin"):
+        self.onkyo_url = f"http://{onkyo_host}"
+        self.auth = HTTPBasicAuth(username, password)
+        self.mqtt_client = mqtt.Client()
+        self.mqtt_client.on_connect = self._on_connect
+        self.mqtt_client.on_message = self._on_message
+        self.mqtt_broker = mqtt_broker
+        self.mqtt_port = mqtt_port
+        self.base_topic = "onkyo/tx-rz50"
+
+    def _on_connect(self, client, userdata, flags, rc):
+        logger.info(f"Connecté au broker MQTT avec code {rc}")
+        client.subscribe(f"{self.base_topic}/command")
+        client.subscribe(f"{self.base_topic}/volume/set")
+        client.subscribe(f"{self.base_topic}/source/set")
+        client.publish(f"{self.base_topic}/availability", "online", retain=True)
+
+    def _on_message(self, client, userdata, msg):
+        try:
+            payload = msg.payload.decode()
+            logger.info(f"Message reçu sur {msg.topic}: {payload}")
+
+            if msg.topic.endswith("/command"):
+                self._handle_power(payload)
+            elif msg.topic.endswith("/volume/set"):
+                self._handle_volume(int(payload))
+            elif msg.topic.endswith("/source/set"):
+                self._handle_source(payload)
+        except Exception as e:
+            logger.error(f"Erreur de traitement du message: {e}")
+
+    def _handle_power(self, state):
+        endpoint = "/Power/setPower"
+        payload = {"power": "on" if state == "ON" else "standby"}
+        try:
+            resp = requests.post(f"{self.onkyo_url}{endpoint}", json=payload, auth=self.auth, timeout=5)
+            resp.raise_for_status()
+            self.mqtt_client.publish(f"{self.base_topic}/state", state, retain=True)
+        except requests.RequestException as e:
+            logger.error(f"Erreur commande power: {e}")
+
+    def _handle_volume(self, level):
+        endpoint = "/Volume/setVolume"
+        payload = {"volume": max(0, min(80, level))}
+        try:
+            resp = requests.post(f"{self.onkyo_url}{endpoint}", json=payload, auth=self.auth, timeout=5)
+            resp.raise_for_status()
+            self.mqtt_client.publish(f"{self.base_topic}/volume/state", level, retain=True)
+        except requests.RequestException as e:
+            logger.error(f"Erreur commande volume: {e}")
+
+    def _handle_source(self, source_name):
+        # Recherche le code source dans le mappage inverse
+        reverse_map = {v: k for k, v in SOURCE_MAP.items()}
+        code = reverse_map.get(source_name.upper())
+        if not code:
+            logger.warning(f"Source inconnue: {source_name}")
+            return
+
+        endpoint = "/Source/setSource"
+        payload = {"source": code}
+        try:
+            resp = requests.post(f"{self.onkyo_url}{endpoint}", json=payload, auth=self.auth, timeout=5)
+            resp.raise_for_status()
+            self.mqtt_client.publish(f"{self.base_topic}/source/state", source_name, retain=True)
+        except requests.RequestException as e:
+            logger.error(f"Erreur commande source: {e}")
+
+    def poll_status(self):
+        """Interroge périodiquement l'état du récepteur et publie sur MQTT."""
+        try:
+            resp = requests.get(f"{self.onkyo_url}/Status/getStatus", auth=self.auth, timeout=5)
+            resp.raise_for_status()
+            data = resp.json()
+            self.mqtt_client.publish(f"{self.base_topic}/state", data.get("power", "unknown"), retain=True)
+            self.mqtt_client.publish(f"{self.base_topic}/volume/state", data.get("volume", 0), retain=True)
+            src_code = str(data.get("source", "00"))
+            self.mqtt_client.publish(f"{self.base_topic}/source/state", SOURCE_MAP.get(src_code, "Unknown"), retain=True)
+        except requests.RequestException as e:
+            logger.error(f"Erreur polling status: {e}")
+            self.mqtt_client.publish(f"{self.base_topic}/availability", "offline", retain=True)
+
+    def start(self):
+        self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port, 60)
+        self.mqtt_client.loop_start()
+        logger.info("Bridge MQTT démarré. En attente de commandes...")
+        try:
+            while True:
+                import time
+                self.poll_status()
+                time.sleep(30)
+        except KeyboardInterrupt:
+            self.mqtt_client.publish(f"{self.base_topic}/availability", "offline", retain=True)
+            self.mqtt_client.loop_stop()
+            logger.info("Bridge MQTT arrêté.")
+
+def main():
+    parser = argparse.ArgumentParser(description="Pont MQTT pour ONKYO TX-RZ50")
+    parser.add_argument("--host", required=True, help="IP du TX-RZ50")
+    parser.add_argument("--mqtt-broker", required=True, help="IP du broker MQTT")
+    parser.add_argument("--mqtt-port", type=int, default=1883, help="Port MQTT (défaut: 1883)")
+    parser.add_argument("--user", default="admin", help="Identifiant Web Setup")
+    parser.add_argument("--pass", dest="password", default="admin", help="Mot de passe Web Setup")
+    args = parser.parse_args()
+
+    bridge = OnkyoMQTTBridge(args.host, args.mqtt_broker, args.mqtt_port, args.user, args.password)
+    bridge.start()
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+## 🎬 Automatisations utiles
+
+### Scénario Cinéma
+
+```yaml
+# automations.yaml
+
+- alias: "Mode Cinéma - ONKYO TX-RZ50"
+  trigger:
+    - platform: state
+      entity_id: media_player.shield_tv
+      to: "playing"
+  condition:
+    - condition: state
+      entity_id: input_select.scene_mode
+      state: "cinema"
+  action:
+    - service: rest_command.onkyo_power_on
+    - delay: "00:00:03"
+    - service: rest_command.onkyo_source_tv
+    - delay: "00:00:02"
+    - service: rest_command.onkyo_mode_atmos
+    - service: media_player.volume_set
+      target:
+        entity_id: media_player.onkyo_tx_rz50
+      data:
+        volume_level: 0.45
+    - service: light.turn_off
+      target:
+        entity_id: light.salon
+```
+
+### Extinction automatique
+
+```yaml
+- alias: "Extinction ONKYO si inactif 2h"
+  trigger:
+    - platform: state
+      entity_id: media_player.onkyo_tx_rz50
+      to: "idle"
+      for:
+        hours: 2
+  action:
+    - service: rest_command.onkyo_power_off
+  mode: single
+```
+
+### Notification mise à jour firmware
+
+```yaml
+- alias: "Alerte firmware ONKYO"
+  trigger:
+    - platform: time_pattern
+      hours: "/6"
+  action:
+    - service: shell_command.check_onkyo_firmware
+    - delay: "00:00:10"
+    - service: notify.mobile_app
+      data:
+        message: "{{ states('sensor.onkyo_firmware_status') }}"
+```
+
+---
+
+## 🔧 Dashboard Lovelace
+
+```yaml
+# Configuration de carte Lovelace (via l'éditeur UI ou YAML)
+
+type: entities
+title: ONKYO TX-RZ50
+entities:
+  - entity: media_player.onkyo_tx_rz50
+  - type: divider
+  - entity: sensor.onkyo_power_state
+    name: État
+  - entity: sensor.onkyo_volume
+    name: Volume
+  - entity: sensor.onkyo_source
+    name: Source
+  - type: divider
+  - type: buttons
+    entities:
+      - entity: script.onkyo_source_net
+        name: NET
+        icon: mdi:cast
+      - entity: script.onkyo_source_bt
+        name: Bluetooth
+        icon: mdi:bluetooth
+      - entity: script.onkyo_source_tv
+        name: TV
+        icon: mdi:television
+      - entity: script.onkyo_source_bluray
+        name: Blu-ray
+        icon: mdi:disc
+  - type: divider
+  - type: buttons
+    entities:
+      - entity: script.onkyo_mode_stereo
+        name: Stéréo
+        icon: mdi:music
+      - entity: script.onkyo_mode_direct
+        name: Direct
+        icon: mdi:audio-video
+      - entity: script.onkyo_mode_atmos
+        name: Atmos
+        icon: mdi:surround-sound
+```
+
+---
+
+## 📌 Notes importantes
+
+- **Network Standby** : Pour que le TX-RZ50 reste joignable en veille, activer `Setup → Hardware → Network → Network Standby = On` [p.145].
+- **Wake-on-LAN** : Le TX-RZ50 supporte le réveil par réseau. Utiliser le service `wake_on_lan.send_magic_packet` dans HA.
+- **Limitations ZONE2/ZONE3** : Le contrôle multizone via REST est possible mais nécessite des endpoints spécifiques (`/Zone2/setPower`, etc.).
+- **Sécurité** : Changer le mot de passe par défaut du Web Setup et utiliser des secrets Home Assistant (`!secret onkyo_password`).
