@@ -10,6 +10,7 @@ Contenu disponible
 * :doc:`configuration` — AccuEQ, Dirac Live, réglages audio (p.124-167)
 * :doc:`modes_ecoute` — Dolby Atmos, DTS:X, THX, Gaming (p.89-90, 183-198)
 * :doc:`multizone` — ZONE 2 & ZONE 3, scénarios d'usage (p.108-111)
+* :doc:`rew_dirac` — Calibration avancée avec REW + Dirac Live (p.160-166)
 * :doc:`depannage` — FAQ, codes d'erreur, réinitialisation (p.169-181)
 
 .. toctree::
@@ -20,6 +21,7 @@ Contenu disponible
    configuration
    modes_ecoute
    multizone
+   rew_dirac
    depannage
 
 Liens utiles

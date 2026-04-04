@@ -1,6 +1,6 @@
 # 🐍 Scripts Python - Documentation technique
 
-> 📋 Guide d'utilisation des 4 scripts de contrôle du ONKYO TX-RZ50
+> 📋 Guide d'utilisation des 6 scripts de contrôle du ONKYO TX-RZ50
 
 ## 📋 Vue d'ensemble
 
@@ -8,6 +8,8 @@
 |--------|-----------|----------------|---------|
 | RS-232 Controller | Série (ISCP) | Contrôle filaire complet | `rs232_control.py` |
 | HTTP API Wrapper | HTTP/REST | Contrôle réseau sans fil | `http_api_wrapper.py` |
+| MQTT Bridge | MQTT + HTTP | Intégration Home Assistant temps réel | `mqtt_bridge.py` |
+| Web Dashboard | FastAPI + HTTP | Interface Web de contrôle | `web_dashboard.py` |
 | Log Parser | Analyse de fichiers | Diagnostic et audit | `log_parser.py` |
 | Firmware Checker | HTTP/REST | Vérification mises à jour | `firmware_checker.py` |
 
@@ -342,9 +344,83 @@ python http_api_wrapper.py --host $ONKYO_IP power --off
 
 ---
 
+## 5️⃣ MQTT Bridge (`mqtt_bridge.py`)
+
+### Principe
+
+Fait le lien entre un broker MQTT (ex: Mosquitto) et l'API HTTP du TX-RZ50. Permet une intégration temps réel avec Home Assistant sans polling REST.
+
+### Commandes
+
+```bash
+# Démarrage basique
+python mqtt_bridge.py --host 192.168.1.100 --mqtt-broker 192.168.1.50
+
+# Avec authentification MQTT
+python mqtt_bridge.py --host 192.168.1.100 --mqtt-broker 192.168.1.50 \
+    --mqtt-user mqtt_user --mqtt-pass mqtt_pass
+
+# Polling toutes les 10 secondes
+python mqtt_bridge.py --host 192.168.1.100 --mqtt-broker 192.168.1.50 \
+    --poll-interval 10
+```
+
+### Topics MQTT publiés/consommés
+
+| Topic | Direction | Description |
+|-------|-----------|-------------|
+| `onkyo/tx-rz50/power/set` | Consommé | Allumer/éteindre |
+| `onkyo/tx-rz50/power/state` | Publié | État actuel |
+| `onkyo/tx-rz50/volume/set` | Consommé | Régler volume (0-80) |
+| `onkyo/tx-rz50/volume/state` | Publié | Volume actuel |
+| `onkyo/tx-rz50/source/set` | Consommé | Changer source |
+| `onkyo/tx-rz50/source/state` | Publié | Source actuelle |
+| `onkyo/tx-rz50/listening_mode/set` | Consommé | Mode d'écoute |
+| `onkyo/tx-rz50/mute/set` | Consommé | Mute on/off |
+| `onkyo/tx-rz50/zone2/power/set` | Consommé | ZONE 2 on/off |
+| `onkyo/tx-rz50/availability` | Publié | online/offline |
+
+---
+
+## 6️⃣ Web Dashboard (`web_dashboard.py`)
+
+### Principe
+
+Serveur Web léger (FastAPI) offrant une interface de contrôle du TX-RZ50 accessible depuis un navigateur. Dashboard responsive avec contrôle du volume, des sources, des modes d'écoute et de ZONE 2.
+
+### Commandes
+
+```bash
+# Démarrer sur le port par défaut (8080)
+python web_dashboard.py --host 192.168.1.100
+
+# Port personnalisé
+python web_dashboard.py --host 192.168.1.100 --port 9090
+
+# Avec authentification
+python web_dashboard.py --host 192.168.1.100 --user admin --pass mon_mot_de_passe
+```
+
+### API REST du dashboard
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/` | GET | Interface Web |
+| `/status` | GET | État actuel du récepteur |
+| `/power` | POST | `{"on": true/false}` |
+| `/volume` | POST | `{"level": 0-80}` |
+| `/source` | POST | `{"code": "27"}` |
+| `/mode` | POST | `{"code": "LMDA"}` |
+| `/zone2/power` | POST | `{"on": true/false}` |
+| `/zone2/source` | POST | `{"code": "27"}` |
+
+---
+
 ## ⚠️ Notes importantes
 
 - **RS-232 vs HTTP** : Les deux protocoles ne doivent pas être utilisés simultanément. Privilégier HTTP pour le contrôle réseau et RS-232 pour les installations fixes.
 - **Network Standby** : Pour que le TX-RZ50 reste joignable via HTTP en veille, activer `Setup → Hardware → Network → Network Standby = On`.
 - **Sécurité** : Changer le mot de passe par défaut du Web Setup (`admin`/`admin`) dans un environnement de production.
 - **Timeouts** : Augmenter le timeout (`--timeout`) si le récepteur est lent à répondre sur le réseau.
+- **MQTT Bridge** : Nécessite un broker MQTT (Mosquitto recommandé). Le bridge publie l'état toutes les 30s par défaut.
+- **Web Dashboard** : Le serveur est conçu pour un usage local. Ne pas exposer directement sur Internet sans reverse proxy avec authentification.
