@@ -40,11 +40,13 @@ from requests.auth import HTTPBasicAuth
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(Path(__file__).parent / 'firmware_checker.log', encoding='utf-8')
-    ]
+        logging.FileHandler(
+            Path(__file__).parent / "firmware_checker.log", encoding="utf-8"
+        ),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -132,7 +134,9 @@ class FirmwareChecker:
             if ver_match:
                 return ver_match.group(1)
 
-        logger.warning("Impossible d'extraire la version actuelle. Vérifiez la connexion réseau.")
+        logger.warning(
+            "Impossible d'extraire la version actuelle. Vérifiez la connexion réseau."
+        )
         return None
 
     def _fetch_json(self, endpoint: str) -> dict[str, Any] | None:
@@ -186,13 +190,23 @@ class FirmwareChecker:
         """
         current = self.get_current_version()
         if not current:
-            return {"current": None, "latest": None, "update_available": False, "message": "❌ Impossible de lire la version actuelle.", "timestamp": datetime.now().isoformat()}
+            return {
+                "current": None,
+                "latest": None,
+                "update_available": False,
+                "message": "❌ Impossible de lire la version actuelle.",
+                "timestamp": datetime.now().isoformat(),
+            }
 
         latest = self.get_latest_reference(latest_url) or current
 
         try:
             is_update = Version(latest) > Version(current)
-            msg = f"✅ Firmware à jour ({current})." if not is_update else f"🔔 Mise à jour disponible : {current} -> {latest} [p.8-10]"
+            msg = (
+                f"✅ Firmware à jour ({current})."
+                if not is_update
+                else f"🔔 Mise à jour disponible : {current} -> {latest} [p.8-10]"
+            )
         except InvalidVersion:
             is_update = False
             msg = f"⚠️ Versions non comparables (actuelle: {current}, référence: {latest})."
@@ -202,7 +216,7 @@ class FirmwareChecker:
             "latest": latest,
             "update_available": is_update,
             "message": msg,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
         logger.info(f"Résultat vérification: {result['message']}")
         return result
@@ -211,8 +225,11 @@ class FirmwareChecker:
         """Enregistre la version de référence localement pour usage futur."""
         DEFAULT_VERSION_FILE.parent.mkdir(parents=True, exist_ok=True)
         DEFAULT_VERSION_FILE.write_text(
-            json.dumps({"latest_version": version, "updated_at": datetime.now().isoformat()}, indent=2),
-            encoding="utf-8"
+            json.dumps(
+                {"latest_version": version, "updated_at": datetime.now().isoformat()},
+                indent=2,
+            ),
+            encoding="utf-8",
         )
         logger.info(f"Version {version} enregistrée dans {DEFAULT_VERSION_FILE}")
 
@@ -227,14 +244,24 @@ Exemples:
   %(prog)s --host 192.168.1.100
   %(prog)s --host 192.168.1.100 --latest-url https://raw.githubusercontent.com/valorisa/tx-rz50-firmware/main/latest.json
   %(prog)s --host 192.168.1.100 --output report.json --set-latest 1.1.0
-        """
+        """,
     )
     parser.add_argument("--host", required=True, help="Adresse IP du TX-RZ50")
     parser.add_argument("--user", default="admin", help="Identifiant Web Setup")
-    parser.add_argument("--pass", dest="password", default="admin", help="Mot de passe Web Setup")
-    parser.add_argument("--latest-url", default=None, help="URL vers un JSON contenant la dernière version")
+    parser.add_argument(
+        "--pass", dest="password", default="admin", help="Mot de passe Web Setup"
+    )
+    parser.add_argument(
+        "--latest-url",
+        default=None,
+        help="URL vers un JSON contenant la dernière version",
+    )
     parser.add_argument("--output", "-o", default=None, help="Fichier de sortie JSON")
-    parser.add_argument("--set-latest", default=None, help="Force et enregistre manuellement la version de référence")
+    parser.add_argument(
+        "--set-latest",
+        default=None,
+        help="Force et enregistre manuellement la version de référence",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Mode verbeux")
 
     args = parser.parse_args()
@@ -254,7 +281,9 @@ Exemples:
         print(result["message"])
 
         if args.output:
-            Path(args.output).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+            Path(args.output).write_text(
+                json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
             print(f"📄 Rapport sauvegardé : {args.output}")
 
     except (ValueError, ConnectionError) as e:

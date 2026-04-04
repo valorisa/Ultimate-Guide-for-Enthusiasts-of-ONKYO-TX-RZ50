@@ -50,11 +50,11 @@ from requests.exceptions import HTTPError, RequestException, Timeout
 # Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(Path(__file__).parent / 'http_api.log', encoding='utf-8')
-    ]
+        logging.FileHandler(Path(__file__).parent / "http_api.log", encoding="utf-8"),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ ENDPOINTS = {
     "volume": "/Volume/setVolume",
     "source": "/Source/setSource",
     "network": "/Network/getNetwork",
-    "firmware": "/Firmware/getVersion"
+    "firmware": "/Firmware/getVersion",
 }
 
 
@@ -94,7 +94,13 @@ class OnkyoHTTPClient:
         >>> print(status['power'])
     """
 
-    def __init__(self, host: str, username: str = "admin", password: str = "admin", timeout: float = DEFAULT_TIMEOUT):
+    def __init__(
+        self,
+        host: str,
+        username: str = "admin",
+        password: str = "admin",
+        timeout: float = DEFAULT_TIMEOUT,
+    ):
         """
         Initialise le client HTTP.
 
@@ -119,9 +125,12 @@ class OnkyoHTTPClient:
 
         # Suppression des warnings InsecureRequestWarning si besoin
         import urllib3
+
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    def _request(self, method: str, endpoint: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _request(
+        self, method: str, endpoint: str, payload: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Effectue une requête HTTP vers l'API Onkyo.
 
@@ -145,7 +154,9 @@ class OnkyoHTTPClient:
             if method.upper() == "GET":
                 response = self.session.get(url, headers=headers, timeout=self.timeout)
             else:
-                response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout)
+                response = self.session.post(
+                    url, json=payload, headers=headers, timeout=self.timeout
+                )
 
             response.raise_for_status()
             data = response.json()
@@ -154,9 +165,13 @@ class OnkyoHTTPClient:
 
         except Timeout as e:
             logger.error(f"Timeout sur {url}: {e}")
-            raise TimeoutError(f"Le récepteur ne répond pas dans les {self.timeout}s") from e
+            raise TimeoutError(
+                f"Le récepteur ne répond pas dans les {self.timeout}s"
+            ) from e
         except HTTPError as e:
-            logger.error(f"Erreur HTTP sur {url}: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Erreur HTTP sur {url}: {e.response.status_code} - {e.response.text}"
+            )
             raise HTTPError(f"Erreur API: {e.response.status_code}") from e
         except json.JSONDecodeError as e:
             logger.error(f"Réponse non JSON de {url}: {response.text}")
@@ -234,14 +249,25 @@ Exemples:
   %(prog)s --host 192.168.1.100 power --on
   %(prog)s --host 192.168.1.100 volume --set 45
   %(prog)s --host 192.168.1.100 source --name NET
-        """
+        """,
     )
 
     parser.add_argument("--host", required=True, help="Adresse IP du TX-RZ50")
-    parser.add_argument("--user", default="admin", help="Identifiant Web Setup (défaut: admin)")
-    parser.add_argument("--pass", dest="password", default="admin", help="Mot de passe Web Setup (défaut: admin)")
-    parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT, help="Timeout en secondes")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Mode verbeux (debug)")
+    parser.add_argument(
+        "--user", default="admin", help="Identifiant Web Setup (défaut: admin)"
+    )
+    parser.add_argument(
+        "--pass",
+        dest="password",
+        default="admin",
+        help="Mot de passe Web Setup (défaut: admin)",
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=DEFAULT_TIMEOUT, help="Timeout en secondes"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Mode verbeux (debug)"
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Commande à exécuter")
 
@@ -266,7 +292,9 @@ Exemples:
 
     # Sous-commande: source
     src_parser = subparsers.add_parser("source", help="Changer la source")
-    src_parser.add_argument("--name", required=True, help="Nom de la source (BD/DVD, NET, etc.)")
+    src_parser.add_argument(
+        "--name", required=True, help="Nom de la source (BD/DVD, NET, etc.)"
+    )
 
     args = parser.parse_args()
 
@@ -274,13 +302,21 @@ Exemples:
         logging.getLogger().setLevel(logging.DEBUG)
 
     try:
-        with OnkyoHTTPClient(args.host, args.user, args.password, args.timeout) as client:
+        with OnkyoHTTPClient(
+            args.host, args.user, args.password, args.timeout
+        ) as client:
             if args.command == "status":
                 print(json.dumps(client.get_status(), indent=2, ensure_ascii=False))
             elif args.command == "network":
-                print(json.dumps(client.get_network_info(), indent=2, ensure_ascii=False))
+                print(
+                    json.dumps(client.get_network_info(), indent=2, ensure_ascii=False)
+                )
             elif args.command == "firmware":
-                print(json.dumps(client.get_firmware_version(), indent=2, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        client.get_firmware_version(), indent=2, ensure_ascii=False
+                    )
+                )
             elif args.command == "power":
                 client.set_power(args.on)
                 print(f"✅ Alimentation: {'ON' if args.on else 'STANDBY'}")

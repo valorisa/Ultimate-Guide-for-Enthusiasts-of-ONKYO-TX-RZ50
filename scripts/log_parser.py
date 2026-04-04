@@ -40,8 +40,8 @@ from typing import Any
 # Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ ERROR_CODE_MAP: dict[str, str] = {
     "AMP Diag Mode": "Mode diagnostic amplificateur activé (vérification câblage enceintes)",
     "NG:": "Défaillance matérielle détectée : débrancher l'appareil et contacter le SAV",
     "Resolution Error": "Résolution vidéo d'entrée non supportée par le téléviseur",
-    "Noise Error": "Bruit détecté pendant le calibrage AccuEQ : vérifier le micro et les enceintes"
+    "Noise Error": "Bruit détecté pendant le calibrage AccuEQ : vérifier le micro et les enceintes",
 }
 
 # Patterns de parsing
@@ -63,9 +63,11 @@ ISCP_PATTERN = re.compile(r"(!1\w+|\w+QSTN|\w+\d{2,3})")
 HTTP_PATTERN = re.compile(r"(GET|POST)\s+(/[^\s]+)\s+HTTP/\d\.\d")
 TIMESTAMP_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})")
 
+
 def load_error_map() -> dict[str, str]:
     """Retourne le dictionnaire des codes d'erreur avec fallback."""
     return ERROR_CODE_MAP
+
 
 def parse_line(line: str) -> dict[str, Any]:
     """
@@ -82,7 +84,7 @@ def parse_line(line: str) -> dict[str, Any]:
         "type": "unknown",
         "payload": line.strip(),
         "severity": "info",
-        "error_desc": None
+        "error_desc": None,
     }
 
     ts_match = TIMESTAMP_PATTERN.search(line)
@@ -109,7 +111,9 @@ def parse_line(line: str) -> dict[str, Any]:
     for code, desc in load_error_map().items():
         if code.upper() in line_upper:
             result["type"] = "error"
-            result["severity"] = "critical" if "NG:" in code or "AMP Diag" in code else "warning"
+            result["severity"] = (
+                "critical" if "NG:" in code or "AMP Diag" in code else "warning"
+            )
             result["error_desc"] = desc
             error_found = True
             break
@@ -122,6 +126,7 @@ def parse_line(line: str) -> dict[str, Any]:
             result["severity"] = "info"
 
     return result
+
 
 def parse_log_file(filepath: Path, log_format: str = "auto") -> list[dict[str, Any]]:
     """
@@ -159,6 +164,7 @@ def parse_log_file(filepath: Path, log_format: str = "auto") -> list[dict[str, A
     logger.info(f"{len(events)} événements extraits.")
     return events
 
+
 def export_to_csv(events: list[dict[str, Any]], output_path: Path) -> None:
     """Exporte les événements en CSV."""
     if not events:
@@ -172,6 +178,7 @@ def export_to_csv(events: list[dict[str, Any]], output_path: Path) -> None:
         writer.writerows(events)
     logger.info(f"Export CSV réussi : {output_path}")
 
+
 def export_to_json(events: list[dict[str, Any]], output_path: Path) -> None:
     """Exporte les événements en JSON."""
     if not events:
@@ -181,6 +188,7 @@ def export_to_json(events: list[dict[str, Any]], output_path: Path) -> None:
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(events, f, ensure_ascii=False, indent=2)
     logger.info(f"Export JSON réussi : {output_path}")
+
 
 def main():
     """Point d'entrée CLI."""
@@ -192,14 +200,38 @@ Exemples:
   %(prog)s --input rs232_control.log --format serial --output report.json
   %(prog)s --input api_trace.log --format http --filter Error --output errors.csv
   %(prog)s --input mixed.log --format auto --export both
-        """
+        """,
     )
-    parser.add_argument("--input", "-i", required=True, help="Chemin du fichier de log à analyser")
-    parser.add_argument("--format", "-f", choices=["serial", "http", "auto"], default="auto", help="Format attendu du log")
-    parser.add_argument("--filter", choices=["Error", "Warning", "Info", "Command"], default=None, help="Filtrer par type/sévérité")
-    parser.add_argument("--output", "-o", default=None, help="Fichier de sortie (CSV ou JSON)")
-    parser.add_argument("--export", choices=["csv", "json", "both"], default="csv", help="Format d'export")
-    parser.add_argument("--timezone", default="local", help="Fuseau horaire pour les timestamps (non implémenté v1)")
+    parser.add_argument(
+        "--input", "-i", required=True, help="Chemin du fichier de log à analyser"
+    )
+    parser.add_argument(
+        "--format",
+        "-f",
+        choices=["serial", "http", "auto"],
+        default="auto",
+        help="Format attendu du log",
+    )
+    parser.add_argument(
+        "--filter",
+        choices=["Error", "Warning", "Info", "Command"],
+        default=None,
+        help="Filtrer par type/sévérité",
+    )
+    parser.add_argument(
+        "--output", "-o", default=None, help="Fichier de sortie (CSV ou JSON)"
+    )
+    parser.add_argument(
+        "--export",
+        choices=["csv", "json", "both"],
+        default="csv",
+        help="Format d'export",
+    )
+    parser.add_argument(
+        "--timezone",
+        default="local",
+        help="Fuseau horaire pour les timestamps (non implémenté v1)",
+    )
 
     args = parser.parse_args()
     input_path = Path(args.input)
@@ -210,7 +242,11 @@ Exemples:
         # Application du filtre
         if args.filter:
             if args.filter in ["Error", "Warning", "Info"]:
-                events = [e for e in events if e.get("severity", "").lower() == args.filter.lower()]
+                events = [
+                    e
+                    for e in events
+                    if e.get("severity", "").lower() == args.filter.lower()
+                ]
             elif args.filter == "Command":
                 events = [e for e in events if "command" in e.get("type", "")]
 
@@ -220,7 +256,9 @@ Exemples:
 
         # Affichage console résumé
         print(f"\n📊 Résumé ({len(events)} événements) :")
-        print(f"  - Erreurs : {sum(1 for e in events if e['severity']=='critical' or e['severity']=='warning')}")
+        print(
+            f"  - Erreurs : {sum(1 for e in events if e['severity']=='critical' or e['severity']=='warning')}"
+        )
         print(f"  - Commandes : {sum(1 for e in events if 'command' in e['type'])}")
         print(f"  - Statuts : {sum(1 for e in events if 'status' in e['type'])}\n")
 
@@ -234,13 +272,18 @@ Exemples:
         else:
             # Fallback console
             for e in events[:10]:  # Affiche les 10 premiers
-                print(f"[{e['timestamp']}] {e['type'].upper()} | {e['severity']} | {e['error_desc'] or e['payload'][:80]}")
+                print(
+                    f"[{e['timestamp']}] {e['type'].upper()} | {e['severity']} | {e['error_desc'] or e['payload'][:80]}"
+                )
             if len(events) > 10:
-                print(f"... et {len(events)-10} autres entrées (utilisez --output pour exporter)")
+                print(
+                    f"... et {len(events)-10} autres entrées (utilisez --output pour exporter)"
+                )
 
     except Exception as e:
         logger.error(f"Échec de l'analyse : {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

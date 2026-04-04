@@ -52,75 +52,79 @@ import serial
 # Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(Path(__file__).parent / 'rs232_control.log', encoding='utf-8')
-    ]
+        logging.FileHandler(
+            Path(__file__).parent / "rs232_control.log", encoding="utf-8"
+        ),
+    ],
 )
 logger = logging.getLogger(__name__)
 
 # Constantes du protocole ISCP [p.75-76]
-ISCP_HEADER = b'!1'  # En-tête de commande ISCP
-ISCP_END = b'\r'     # Caractère de fin de commande
+ISCP_HEADER = b"!1"  # En-tête de commande ISCP
+ISCP_END = b"\r"  # Caractère de fin de commande
 
 # Mappage des commandes ISCP supportées
 ISCP_COMMANDS: dict[str, dict[str, str]] = {
-    'POWER': {
-        'ON': '!1PWR01',
-        'STANDBY': '!1PWR00',
-        'QUERY': '!1PWRQSTN'
+    "POWER": {"ON": "!1PWR01", "STANDBY": "!1PWR00", "QUERY": "!1PWRQSTN"},
+    "VOLUME": {
+        "UP": "!1MVLUP",
+        "DOWN": "!1MVLDOWN",
+        "SET": "!1MVL{:02X}",  # Format hexadécimal 00-50 (0-80 en décimal)
+        "QUERY": "!1MVLQSTN",
     },
-    'VOLUME': {
-        'UP': '!1MVLUP',
-        'DOWN': '!1MVLDOWN',
-        'SET': '!1MVL{:02X}',  # Format hexadécimal 00-50 (0-80 en décimal)
-        'QUERY': '!1MVLQSTN'
+    "MUTING": {"ON": "!1AML01", "OFF": "!1AML00", "QUERY": "!1AMLQSTN"},
+    "SOURCE": {
+        "BD/DVD": "!1SLI00",
+        "GAME": "!1SLI01",
+        "CBL/SAT": "!1SLI02",
+        "STRM BOX": "!1SLI03",
+        "PC": "!1SLI04",
+        "AUX": "!1SLI05",
+        "CD": "!1SLI06",
+        "TV": "!1SLI07",
+        "PHONO": "!1SLI08",
+        "NET": "!1SLI27",
+        "USB": "!1SLI28",
+        "BLUETOOTH": "!1SLI29",
+        "TUNER": "!1SLI26",
+        "QUERY": "!1SLIQSTN",
     },
-    'MUTING': {
-        'ON': '!1AML01',
-        'OFF': '!1AML00',
-        'QUERY': '!1AMLQSTN'
+    "LISTENING_MODE": {
+        "STEREO": "!1LMST",
+        "DIRECT": "!1LMDIR",
+        "PURE_AUDIO": "!1LMPA",
+        "DOLBY_ATMOS": "!1LMDA",
+        "DTS_X": "!1LMDX",
+        "THX_CINEMA": "!1LMTH",
+        "QUERY": "!1LMQSTN",
     },
-    'SOURCE': {
-        'BD/DVD': '!1SLI00',
-        'GAME': '!1SLI01',
-        'CBL/SAT': '!1SLI02',
-        'STRM BOX': '!1SLI03',
-        'PC': '!1SLI04',
-        'AUX': '!1SLI05',
-        'CD': '!1SLI06',
-        'TV': '!1SLI07',
-        'PHONO': '!1SLI08',
-        'NET': '!1SLI27',
-        'USB': '!1SLI28',
-        'BLUETOOTH': '!1SLI29',
-        'TUNER': '!1SLI26',
-        'QUERY': '!1SLIQSTN'
+    "ZONE2": {
+        "POWER_ON": "!1ZMT23010",
+        "POWER_OFF": "!1ZMT23011",
+        "SOURCE": "!1ZMT23{:02X}",  # Code source hexadécimal
+        "VOLUME": "!1ZVL{:02X}",
+        "QUERY": "!1ZMT23QSTN",
     },
-    'LISTENING_MODE': {
-        'STEREO': '!1LMST',
-        'DIRECT': '!1LMDIR',
-        'PURE_AUDIO': '!1LMPA',
-        'DOLBY_ATMOS': '!1LMDA',
-        'DTS_X': '!1LMDX',
-        'THX_CINEMA': '!1LMTH',
-        'QUERY': '!1LMQSTN'
-    },
-    'ZONE2': {
-        'POWER_ON': '!1ZMT23010',
-        'POWER_OFF': '!1ZMT23011',
-        'SOURCE': '!1ZMT23{:02X}',  # Code source hexadécimal
-        'VOLUME': '!1ZVL{:02X}',
-        'QUERY': '!1ZMT23QSTN'
-    }
 }
 
 # Mappage des codes source pour ZONE2 [p.108-109]
 ZONE2_SOURCE_CODES: dict[str, int] = {
-    'BD/DVD': 0x00, 'GAME': 0x01, 'CBL/SAT': 0x02, 'STRM BOX': 0x03,
-    'PC': 0x04, 'AUX': 0x05, 'CD': 0x06, 'TV': 0x07, 'PHONO': 0x08,
-    'NET': 0x27, 'USB': 0x28, 'BLUETOOTH': 0x29, 'TUNER': 0x26
+    "BD/DVD": 0x00,
+    "GAME": 0x01,
+    "CBL/SAT": 0x02,
+    "STRM BOX": 0x03,
+    "PC": 0x04,
+    "AUX": 0x05,
+    "CD": 0x06,
+    "TV": 0x07,
+    "PHONO": 0x08,
+    "NET": 0x27,
+    "USB": 0x28,
+    "BLUETOOTH": 0x29,
+    "TUNER": 0x26,
 }
 
 
@@ -171,7 +175,9 @@ class RS232Controller:
         self.baudrate = baudrate
         self.timeout = timeout
         self.ser: serial.Serial | None = None
-        logger.info(f"Initialisation du contrôleur RS-232: port={port}, baudrate={baudrate}")
+        logger.info(
+            f"Initialisation du contrôleur RS-232: port={port}, baudrate={baudrate}"
+        )
 
     def connect(self) -> bool:
         """
@@ -191,7 +197,7 @@ class RS232Controller:
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 timeout=self.timeout,
-                write_timeout=self.timeout
+                write_timeout=self.timeout,
             )
             # Attendre que le port soit prêt
             time.sleep(0.1)
@@ -207,7 +213,9 @@ class RS232Controller:
             self.ser.close()
             logger.info(f"Connexion fermée sur {self.port}")
 
-    def _build_command(self, category: str, action: str, value: str | None = None) -> bytes:
+    def _build_command(
+        self, category: str, action: str, value: str | None = None
+    ) -> bytes:
         """
         Construit une commande ISCP à partir des paramètres.
 
@@ -230,16 +238,16 @@ class RS232Controller:
         if not cmd_template:
             raise KeyError(f"Action non supportée: {category} {action}")
 
-        if '{:' in cmd_template:
+        if "{:" in cmd_template:
             if value is None:
                 raise ValueError(f"Valeur requise pour l'action: {category} {action}")
             # Gestion spéciale pour ZONE2 SOURCE
-            if category == 'ZONE2' and action == 'SOURCE':
+            if category == "ZONE2" and action == "SOURCE":
                 if value not in ZONE2_SOURCE_CODES:
                     raise ValueError(f"Source ZONE2 non reconnue: {value}")
                 value = f"{ZONE2_SOURCE_CODES[value]:02X}"
             # Gestion du volume (décimal -> hexadécimal)
-            elif category == 'VOLUME' and action == 'SET':
+            elif category == "VOLUME" and action == "SET":
                 try:
                     vol = int(value)
                     if not (0 <= vol <= 80):
@@ -247,11 +255,18 @@ class RS232Controller:
                     value = f"{vol:02X}"
                 except ValueError as e:
                     raise ValueError(f"Volume invalide: {value}") from e
-            return (cmd_template.format(int(value, 16) if category in ('ZONE2', 'VOLUME') else value) + ISCP_END.decode()).encode('ascii')
+            return (
+                cmd_template.format(
+                    int(value, 16) if category in ("ZONE2", "VOLUME") else value
+                )
+                + ISCP_END.decode()
+            ).encode("ascii")
 
-        return (cmd_template + ISCP_END.decode()).encode('ascii')
+        return (cmd_template + ISCP_END.decode()).encode("ascii")
 
-    def send_command(self, category: str, action: str, value: str | None = None) -> str | None:
+    def send_command(
+        self, category: str, action: str, value: str | None = None
+    ) -> str | None:
         """
         Envoie une commande au TX-RZ50 et retourne la réponse.
 
@@ -268,7 +283,9 @@ class RS232Controller:
             serial.SerialException: En cas d'erreur de communication.
         """
         if not self.ser or not self.ser.is_open:
-            raise RuntimeError("Connexion série non établie. Appelez connect() d'abord.")
+            raise RuntimeError(
+                "Connexion série non établie. Appelez connect() d'abord."
+            )
 
         try:
             cmd = self._build_command(category, action, value)
@@ -280,7 +297,7 @@ class RS232Controller:
             # Attendre une réponse (optionnel, certaines commandes n'en ont pas)
             time.sleep(0.2)
             if self.ser.in_waiting > 0:
-                response = self.ser.readline().decode('ascii', errors='ignore').strip()
+                response = self.ser.readline().decode("ascii", errors="ignore").strip()
                 logger.debug(f"Réponse reçue: {response}")
                 return response
             return None
@@ -321,7 +338,9 @@ def parse_command_string(cmd_str: str) -> tuple:
     """
     parts = cmd_str.strip().upper().split(maxsplit=2)
     if len(parts) < 2:
-        raise ValueError(f"Commande invalide: '{cmd_str}'. Format attendu: CATEGORY ACTION [VALUE]")
+        raise ValueError(
+            f"Commande invalide: '{cmd_str}'. Format attendu: CATEGORY ACTION [VALUE]"
+        )
 
     category = parts[0]
     action = parts[1]
@@ -349,38 +368,43 @@ Commandes supportées:
   SOURCE: BD/DVD, GAME, CBL/SAT, NET, USB, BLUETOOTH, TUNER, etc.
   LISTENING_MODE: STEREO, DIRECT, PURE_AUDIO, DOLBY_ATMOS, DTS_X, THX_CINEMA
   ZONE2: POWER_ON, POWER_OFF, SOURCE <name>, VOLUME <0-80>
-        """
+        """,
     )
 
     parser.add_argument(
-        '--port', '-p',
+        "--port",
+        "-p",
         type=str,
         required=True,
-        help="Port série (ex: COM3 sous Windows, /dev/ttyUSB0 sous Linux)"
+        help="Port série (ex: COM3 sous Windows, /dev/ttyUSB0 sous Linux)",
     )
     parser.add_argument(
-        '--command', '-c',
+        "--command",
+        "-c",
         type=str,
         required=True,
-        help="Commande à envoyer (ex: 'POWER ON', 'VOLUME SET 50')"
+        help="Commande à envoyer (ex: 'POWER ON', 'VOLUME SET 50')",
     )
     parser.add_argument(
-        '--baudrate', '-b',
+        "--baudrate",
+        "-b",
         type=int,
         default=9600,
         choices=[9600, 19200, 38400, 57600, 115200],
-        help="Vitesse de transmission en bauds (par défaut: 9600)"
+        help="Vitesse de transmission en bauds (par défaut: 9600)",
     )
     parser.add_argument(
-        '--timeout', '-t',
+        "--timeout",
+        "-t",
         type=float,
         default=5.0,
-        help="Timeout en secondes pour les opérations série (par défaut: 5.0)"
+        help="Timeout en secondes pour les opérations série (par défaut: 5.0)",
     )
     parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help="Activer le mode verbeux (debug logging)"
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Activer le mode verbeux (debug logging)",
     )
 
     args = parser.parse_args()
@@ -390,9 +414,13 @@ Commandes supportées:
 
     try:
         category, action, value = parse_command_string(args.command)
-        logger.info(f"Commande parse: category={category}, action={action}, value={value}")
+        logger.info(
+            f"Commande parse: category={category}, action={action}, value={value}"
+        )
 
-        with RS232Controller(port=args.port, baudrate=args.baudrate, timeout=args.timeout) as ctrl:
+        with RS232Controller(
+            port=args.port, baudrate=args.baudrate, timeout=args.timeout
+        ) as ctrl:
             response = ctrl.send_command(category, action, value)
             if response:
                 print(f"Réponse: {response}")
