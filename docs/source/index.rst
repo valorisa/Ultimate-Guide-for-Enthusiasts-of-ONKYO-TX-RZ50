@@ -8,9 +8,11 @@ Contenu disponible
 
 * :doc:`installation` — Branchement et sécurité (p.7-77)
 * :doc:`configuration` — AccuEQ, Dirac Live, réglages audio (p.124-167)
+* :doc:`accueq_deep_dive` — AccuEQ vs Dirac Live, optimisation (p.124-143)
 * :doc:`modes_ecoute` — Dolby Atmos, DTS:X, THX, Gaming (p.89-90, 183-198)
 * :doc:`multizone` — ZONE 2 & ZONE 3, scénarios d'usage (p.108-111)
 * :doc:`rew_dirac` — Calibration avancée avec REW + Dirac Live (p.160-166)
+* :doc:`security` — Sécurité réseau, VLAN, audit (p.145-157)
 * :doc:`depannage` — FAQ, codes d'erreur, réinitialisation (p.169-181)
 
 .. toctree::
@@ -19,9 +21,11 @@ Contenu disponible
 
    installation
    configuration
+   accueq_deep_dive
    modes_ecoute
    multizone
    rew_dirac
+   security
    depannage
 
 Liens utiles
